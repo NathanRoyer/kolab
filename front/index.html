@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Kolab!</title>
+		<link rel="stylesheet" href="style.css" />
+		<link rel="icon" href="data:;base64,=">
+		<script type="text/javascript" src="main.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+	</head>
+	<body id="body-theme-dark" class="flex-h">
+		<div id="context-menu-background" class="hidden">
+			<div id="context-menu" class="bg-lv2 radius05 border2-c1 flex-v transparent noverflow"></div>
+		</div>
+		<div id="cover" class="flex-h jc-center ai-center bg-lv0">
+			<div id="login-form" class="flex-v ai-center border2-c1 pad1 radius1 hidden bg-lv2">
+				<h2>Authentication</h2>
+				<div class="margin05"></div>
+				<div class="border2-c1 flex-h as-stretch radius05 bg-lv2 noverflow">
+					<button id="login-button" class="grow pad05 btn selected contained">Login</button>
+					<div class="border1-c2-right"></div>
+					<button id="create-account" class="grow pad05 btn nowrap contained">Create Account</button>
+				</div>
+				<div class="margin05"></div>
+				<input id="username-input" type="text" placeholder="username" class="border1-c2 bg-lv2 pad05 radius05">
+				<div class="margin02"></div>
+				<input id="password-input" type="password" placeholder="password" class="border1-c2 bg-lv2 pad05 radius05">
+				<div class="margin05"></div>
+				<button id="auth-button" class="border2-c1 radius05 pad05 btn">Submit</button>
+			</div>
+			<div id="user-cards" class="flex-v ai-stretch border2-c1 radius1 hidden bg-lv2 noverflow"></div>
+			<div id="invites-popup" class="flex-v ai-center border2-c1 pad1 radius1 hidden">
+				<h2>Received Invites</h2>
+				<div id="invites-list" class="flex-v"></div>
+			</div>
+			<div id="upload-popup" class="flex-v border2-c1 pad05 radius1 hidden">
+				<span class="pad05">Upload in progress...</span>
+			</div>
+		</div>
+		<div id="left-panel" class="flex-v bg-lv1">
+			<div class="border2-c1-bottom flex-h ai-center">
+				<h2 id="collapse-button" class="grow btn pad05 ta-center ellipsis">Your Objects</h2>
+				<button id="create-entity" class="btn pad05 margin05 border2-c2 bg-lv0 radius05 bold collapse-bye">🆕</button>
+				<button id="list-invites" class="btn pad05 margin05-right border2-c2 bg-lv0 radius05 bold collapse-bye">📥</button>
+			</div>
+			<div id="left-panel-items" class="flex-v grow border2-c1-bottom autoverflow"></div>
+			<div class="flex-h h4">
+				<div id="user-btn" class="flex-h btn grow collapse-bye">
+					<div id="user-avatar" class="gradient-disk margin05 jc-stretch"></div>
+					<div class="flex-v jc-center left-panel-name noverflow">
+						<h3 id="user-name" class="ellipsis">bitsneak</h3>
+						<span id="user-status" class="ellipsis">Working on Kolab</span>
+					</div>
+				</div>
+				<h2 id="settings-btn" class="btn pad05 ta-center square">⚙️</h2>
+			</div>
+		</div>
+		<div id="main-panel" class="flex-h grow">
+			<div id="side-l" class="grow flex-v transparent"></div>
+			<span class="border1-c2-right"></span>
+			<div id="side-r" class="grow flex-v transparent hide-mobile"></div>
+		</div>
+		<input type="file" id="files" class="hidden" multiple />
+	</body>
+</html>
