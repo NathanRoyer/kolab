@@ -23,19 +23,19 @@ body {
     --border-color-selected: #3b499b;
 }
 
-#body-theme-bright {
-    --bgcolor-level-0: #bb88bb;
-    --bgcolor-level-1: #cc99cc;
-    --bgcolor-level-2: #ddaadd;
-    --bgcolor-level-3: #eebbee;
-    --text-color: #10004a;
-    --bgcolor-hover: #eee;
-    --text-color-hover: black;
-    --border-color-1: #514676;
-    --border-color-2: #471f91;
-    --border-color-3: #30006a;
+#body-theme-elodie {
+    --bgcolor-level-0: #fffae2;
+    --bgcolor-level-1: #ffbee8;
+    --bgcolor-level-2: #ca91ca;
+    --bgcolor-level-3: #d0bbee;
+    --text-color: #ec099e;
+    --bgcolor-hover: #fa93d6;
+    --text-color-hover: #a0056a;
+    --border-color-1: #ed38a7;
+    --border-color-2: #ff00d7;
+    --border-color-3: #fc31c0;
     --bgcolor-selected: #6000ca;
-    --border-color-selected: #fff;
+    --border-color-selected: #c93434;
 }
 
 body, html {

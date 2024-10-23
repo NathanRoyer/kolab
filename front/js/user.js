@@ -34,7 +34,7 @@ async function load_user_data() {
         'Set Status': user_click,
         'Theme': {
             'Dark': switch_theme,
-            'Bright': switch_theme,
+            'Elodie': switch_theme,
         },
         'Log Out': log_out,
     };
@@ -351,7 +351,7 @@ function switch_theme(_event, theme) {
     let body_id;
 
     /**/ if (theme == 'Dark') body_id = 'body-theme-dark';
-    else if (theme == 'Bright') body_id = 'body-theme-bright';
+    else if (theme == 'Elodie') body_id = 'body-theme-elodie';
 
     localStorage['theme'] = body_id;
     document.body.id = body_id;
