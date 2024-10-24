@@ -110,6 +110,8 @@ async function send_message(event) {
     let input = event.target.parentElement.children[0];
     let side = SIDES[input.side_i];
 
+    if (!input.value.length) return;
+
     let parameters = [side.raw_id, side.revision, input.value];
     let _ = await request('post-message', parameters);
 
