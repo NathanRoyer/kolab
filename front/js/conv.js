@@ -3,13 +3,17 @@
 async function init_conv(side_i) {
     let side = SIDES[side_i];
     let parameters = [side.raw_id, { cursor: 'latest' }];
-    let [_, [rev, messages]] = await request('load-messages-before', parameters);
+    let [_, data] = await request('load-messages-before', parameters);
+    let [rev, first_msg_index, messages] = data;
     side.revision = rev;
 
     await init_banner(side_i);
 
     let msg_c = ['grow', 'border1-c1-bottom', 'flex-v', 'pad1', 'autoverflow'];
     side.msg_div = create(side.element, 'div', msg_c);
+    side.msg_div.side_i = side_i;
+    side.msg_div.addEventListener('scroll', load_older_messages);
+    side.msg_div.first_msg_index = first_msg_index;
 
     let bottom = create(side.element, 'div', ['pad05', 'flex-h']);
 
@@ -26,6 +30,12 @@ async function init_conv(side_i) {
 
     redirect_enter(input, send);
     send.addEventListener('click', send_message);
+
+    if (first_msg_index !== 0) {
+        let placeholder_c = ['pad05', 'disabled', 'ta-center'];
+        let placeholder = create(side.msg_div, 'i', placeholder_c);
+        placeholder.innerText = 'Loading older messages...';
+    }
 
     for (let i = 0; i < messages.length; i++) {
         await add_message(side.msg_div, messages[i]);
@@ -117,4 +127,39 @@ async function send_message(event) {
 
     input.value = '';
     input.focus();
+}
+
+async function load_older_messages(event) {
+    let index = this.first_msg_index;
+    if (index === 0) return;
+
+    let side = SIDES[this.side_i];
+    let loading_placeholder = side.msg_div.children[0];
+    let load_more = this.scrollTop < loading_placeholder.clientHeight;
+    if (!load_more) return;
+
+    let parameters = [side.raw_id, { cursor: 'specific', index }];
+    let [_, data] = await request('load-messages-before', parameters);
+    let [_rev, first_msg_index, messages] = data;
+
+    this.first_msg_index = first_msg_index;
+
+    let tmp_msg_div = create(null, 'div', []);
+    for (let i = 0; i < messages.length; i++) {
+        await add_message(tmp_msg_div, messages[i]);
+    }
+
+    let placeholder = side.msg_div.firstChild;
+    let msg_elements = tmp_msg_div.children;
+    for (let i = 0; i < msg_elements.length; i++) {
+        let new_node = msg_elements[i];
+        side.msg_div.insertBefore(new_node, placeholder);
+    }
+
+    placeholder.remove();
+
+    if (first_msg_index !== 0) {
+        let first_node = side.msg_div.firstChild;
+        side.msg_div.insertBefore(placeholder, first_node);
+    }
 }

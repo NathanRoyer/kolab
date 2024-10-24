@@ -28,7 +28,7 @@ pub enum ReplyData {
     SelfData(Revision, UserData, EntitiesDataMap, SecretUserData),
     EntityCreated(EntityId),
     // History(Vec<(Revision, Change)>),
-    Messages(Revision, Vec<Message>),
+    Messages(Revision, IndexInEntity, Vec<Message>),
     Spreadsheet(Revision, Vec<(IndexInEntity, Cell)>),
     Document(Revision, Vec<Element>),
     Bucket(Revision, Vec<File>),

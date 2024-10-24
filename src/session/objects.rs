@@ -45,7 +45,8 @@ impl Session {
             return Err("Invalid cursor");
         };
 
-        Ok(Reply::new(num, ReplyData::Messages(conv.revision, slice.to_vec())))
+        let data = ReplyData::Messages(conv.revision, start as u64 ,slice.to_vec());
+        Ok(Reply::new(num, data))
     }
 
     pub(super) async fn handle_post_message(
