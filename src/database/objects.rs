@@ -115,6 +115,7 @@ pub struct SecretUserData {
     pub entities: LiteMap<EntityId, EntityAccess>,
     pub password_hash: String,
     pub server_admin: bool,
+    pub max_file_size: usize,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]

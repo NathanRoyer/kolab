@@ -11,6 +11,7 @@ let SOCKET;
 let NEXT_REQ_NUM = 0;
 let CAN_CLOSE_POPUP = false;
 let USER_ID;
+let USER_DATA = {};
 let INVITE_ENTITY_ID;
 let CALLBACKS = [];
 
@@ -107,4 +108,16 @@ function collapse_click() {
 
     let text = classes.contains('collapsed') ? '...' : 'Your Objects';
     find('collapse-button').innerText = text;
+}
+
+function datetime_string(timestamp_s) {
+    let d = new Date(timestamp_s * 1000);
+
+    let date = ('0' + d.getDate()).slice(-2);
+    let month = ('0'+(d.getMonth()+1)).slice(-2);
+    let year = d.getFullYear();
+    let hour = ('0' + d.getHours()).slice(-2);
+    let minute = ('0' + d.getMinutes()).slice(-2);
+
+    return date + '/' + month + '/' + year + ' - ' + hour + ':' + minute;
 }

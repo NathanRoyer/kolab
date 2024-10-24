@@ -70,6 +70,7 @@ impl Session {
 
         user.secret.server_admin = user_id == 0;
         user.secret.password_hash = password_hash;
+        user.secret.max_file_size = 50 * 1024 * 1024; // 50 MiB
         user.metadata.author = user_id;
         user.public = UserData {
             name,

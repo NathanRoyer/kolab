@@ -71,7 +71,7 @@ async function handle_update(update) {
     /*__*/ if (update.type === 'new-message') {
         let message = update.data;
 
-        if (notif_enabled && message.author != USER_ID) {
+        if (!side && notif_enabled && message.author != USER_ID) {
             let text = await get_username(message.author) + ': ' + message.content;
             let title = USER_DATA.secret.entities[update.id].local_name;
             new Notification(title, { body: text });

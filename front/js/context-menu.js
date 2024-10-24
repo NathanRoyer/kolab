@@ -24,7 +24,7 @@ async function context_menu_click(event) {
 }
 
 function show_context_menu(event) {
-    if (event.target !== this) return;
+    event.stopPropagation();
 
     CONTEXT_MENU.classList.add('appear');
     CONTEXT_MENU.user_path = [];

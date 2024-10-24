@@ -131,15 +131,24 @@ impl Session {
     }
 
     async fn handle_bytes(&mut self, bytes: Vec<u8>) -> Result<(), String> {
+        let (arc_user, _user_id) = self.get_user().await?;
+        let max_file_size = {
+            let user = arc_user.read().await;
+            user.secret.max_file_size
+        };
+
         if self.tmp_file.is_none() {
             let tmp_file = TemporaryFile::new().await?;
             self.tmp_file = Some(tmp_file);
         }
 
         let tmp_file = self.tmp_file.as_mut().unwrap();
-        tmp_file.extend_from_slice(&bytes).await;
+        let new_size = tmp_file.extend_from_slice(&bytes).await;
 
-        Ok(())
+        match new_size > max_file_size {
+            true => Err("File too big".into()),
+            false => Ok(()),
+        }
     }
 
     async fn handle_ping(&mut self, bytes: Vec<u8>) -> Result<(), String> {

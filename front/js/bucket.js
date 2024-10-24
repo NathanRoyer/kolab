@@ -1,5 +1,18 @@
 // bucket.js
 
+const FILE_ACTIONS = {
+    'Open 🡽': file_new_tab,
+    'Delete': file_delete,
+};
+
+function size_fmt(num_bytes) {
+    let digits = num_bytes.toString().length;
+    /**/ if (digits > 9) return parseInt(num_bytes / 10**9).toString() + ' GB';
+    else if (digits > 6) return parseInt(num_bytes / 10**6).toString() + ' MB';
+    else if (digits > 3) return parseInt(num_bytes / 10**3).toString() + ' kB';
+    else return num_bytes.toString() + ' B';
+}
+
 async function init_bucket(side_i) {
     let side = SIDES[side_i];
     let [_, [rev, files]] = await request('load-bucket', side.raw_id);
@@ -17,17 +30,19 @@ async function init_bucket(side_i) {
 
     for (let i = 0; i < files.length; i++) {
         let file = side.files[i];
-        let file_c = ['pad05', 'btn', 'border1-c2-bottom'];
+        let file_c = ['btn', 'border1-c2-bottom', 'flex-h'];
         let file_e = create(side.files_div, 'div', file_c);
-        file_e.innerText = file.name;
         file_e.index = i;
 
-        let actions = {
-            'Open 🡽': file_new_tab,
-            'Delete': file_delete,
-        };
+        let file_name = create(file_e, 'span', ['pad05', 'grow', 'border2-c2-right']);
+        let file_sz = create(file_e, 'span', ['pad05', 'border2-c2-right', 'w4', 'ta-center']);
+        let file_up = create(file_e, 'span', ['pad05', 'w9', 'ta-center']);
 
-        init_context_menu(file_e, actions);
+        file_name.innerText = file.name;
+        file_sz.innerText = size_fmt(file.size);
+        file_up.innerText = datetime_string(file.uploaded);
+
+        init_context_menu(file_e, FILE_ACTIONS);
     }
 }
 
@@ -63,7 +78,12 @@ async function file_pick() {
     let side = SIDES[this.side_i];
     for (let i = 0; i < this.files.length; i++) {
         let file = this.files[i];
-        console.log(file);
+        
+
+        if (file.size > USER_DATA.secret.max_file_size) {
+            alert(file.name + ': fichier trop volumineux.');
+            continue;
+        }
 
         for (let j = 0; j < file.size; j += CHUNK) {
             let chunk = file.slice(j, j + CHUNK);

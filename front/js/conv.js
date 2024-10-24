@@ -46,18 +46,6 @@ function scrolled_to_max(element) {
     return Math.abs(element.scrollHeight - element.scrollTop - element.clientHeight) < 1;
 }
 
-function datetime_string(timestamp_s) {
-    let d = new Date(timestamp_s * 1000);
-
-    let date = ('0' + d.getDate()).slice(-2);
-    let month = ('0'+(d.getMonth()+1)).slice(-2);
-    let year = d.getFullYear();
-    let hour = ('0' + d.getHours()).slice(-2);
-    let minute = ('0' + d.getMinutes()).slice(-2);
-
-    return date + '/' + month + '/' + year + ' - ' + hour + ':' + minute;
-}
-
 async function add_message(msg_div, message) {
     let msg_side = (message.author == USER_ID) ? 'right' : 'left';
     let author_name = await get_username(message.author);

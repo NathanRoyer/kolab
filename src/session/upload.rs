@@ -42,10 +42,11 @@ impl TemporaryFile {
         })
     }
 
-    pub async fn extend_from_slice(&mut self, bytes: &[u8]) {
+    pub async fn extend_from_slice(&mut self, bytes: &[u8]) -> usize {
         let _ = self.handle.write_all(bytes).await;
         self.hasher.update(bytes);
         self.size += bytes.len();
+        self.size
     }
 
     pub async fn finalize(mut self) -> (Hash, usize) {
