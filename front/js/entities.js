@@ -124,11 +124,13 @@ async function entity_click() {
     find('left-panel').classList.add('hide-mobile');
     let row = this.parentElement;
     if (row.classList.contains('selected') && !is_mobile()) {
+        row.classList.remove('selected');
         let side_i = id_to_side(row.entity_id);
         close_side(side_i);
         SIDES[side_i] = {};
         await refresh_left_panel();
     } else {
+        row.classList.add('selected');
         await open_entity(row.entity_id);
     }
 }
@@ -158,9 +160,9 @@ async function open_entity(entity_id) {
     };
 
     await init[ent_type](side_i);
+    setTimeout(() => element.classList.add('appear'), 100);
     await update_last_seen(side_i);
     await refresh_left_panel();
-    setTimeout(() => element.classList.add('appear'), 100);
 }
 
 async function update_last_seen(side_i) {
