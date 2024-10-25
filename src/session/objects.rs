@@ -3,8 +3,8 @@ use crate::database::EntityId;
 use crate::database::entities::{Revision, IndexInEntity};
 use crate::database::update::{Update, UpdateType};
 use crate::database::objects::{
-    Message, Cell, Element,
-    File, ConversationId, SheetId, DocumentId, BucketId, Stamp,
+    Message, Cell, Element, MessageExtension,
+    File, ConvId, SheetId, DocumentId, BucketId, Stamp,
 };
 
 use crate::DATABASE;
@@ -15,7 +15,7 @@ use super::replies::{Reply, ReplyData};
 use super::{Session, ErrMsg};
 
 use std::time::{SystemTime, Duration};
-use std::mem::{drop, replace};
+use std::mem::{drop, replace, take};
 
 fn now_stamp() -> Stamp {
     SystemTime::UNIX_EPOCH.elapsed().unwrap_or(Duration::ZERO).as_secs()
@@ -25,7 +25,7 @@ impl Session {
     pub(super) async fn handle_load_messages_before(
         &mut self,
         num: usize,
-        conv_id: ConversationId,
+        conv_id: ConvId,
         cursor: MessageCursor,
     ) -> Result<Reply, ErrMsg> {
         let (arc_user, _user_id) = self.get_user().await?;
@@ -53,18 +53,19 @@ impl Session {
     pub(super) async fn handle_post_message(
         &mut self,
         num: usize,
-        conv_id: ConversationId,
-        rev: Revision,
+        conv_id: ConvId,
+        mut rev: Revision,
         content: String,
     ) -> Result<Reply, ErrMsg> {
         let (arc_user, user_id) = self.get_user().await?;
-        arc_user.check_access_to(EntityId::Conversation(conv_id), true).await?;
+        let entity_id = EntityId::Conversation(conv_id);
+        arc_user.check_access_to(entity_id, true).await?;
 
         let message = Message {
             author: user_id,
             content,
             created: now_stamp(),
-            edited: None,
+            extended: false,
         };
 
         let arc_conv = DATABASE.conversations.find(conv_id).await.ok_or("No such conversation")?;
@@ -75,9 +76,59 @@ impl Session {
         }
 
         conv.metadata.revision += 1;
+        rev = conv.metadata.revision;
         let index = conv.messages.len() as u64;
-        let update = Update::message(conv_id, conv.metadata.revision, index, &message);
+        let update = Update::new(UpdateType::NewMessage, entity_id, rev, index, &message);
         conv.messages.push(message);
+
+        drop(conv);
+        DATABASE.notify_users(update).await;
+        Ok(Reply::new(num, ReplyData::GenericSuccess))
+    }
+
+    pub(super) async fn handle_toggle_reaction(
+        &mut self,
+        num: usize,
+        conv_id: ConvId,
+        rev: Revision,
+        index: IndexInEntity,
+        reaction: char,
+    ) -> Result<Reply, ErrMsg> {
+        let (arc_user, user_id) = self.get_user().await?;
+        let entity_id = EntityId::Conversation(conv_id);
+        arc_user.check_access_to(entity_id, true).await?;
+
+        let arc_conv = DATABASE.conversations.find(conv_id).await.ok_or("No such conversation")?;
+        let mut conv = arc_conv.write().await;
+        let bad_index = index >= (conv.messages.len() as u64);
+        if conv.metadata.revision != rev || bad_index {
+            return Err("Out of date or bad index");
+        }
+
+        let new_rev = conv.metadata.revision + 1;
+        let message = &mut conv.messages[index as usize];
+
+        let mut extended;
+        if message.extended {
+            extended = serde_json::from_str(&message.content).unwrap();
+        } else {
+            extended = MessageExtension::default();
+            extended.content = take(&mut message.content);
+            message.extended = true;
+        }
+
+        if let Some(users) = extended.reactions.get_mut(&reaction) {
+            match users.iter().position(|uid| *uid == user_id) {
+                Some(i) => _ = users.swap_remove(i),
+                None => users.push(user_id),
+            };
+        } else {
+            extended.reactions.insert(reaction, vec![user_id]);
+        }
+
+        message.content = serde_json::to_string(&extended).unwrap();
+        let update = Update::new(UpdateType::SetMessage, entity_id, new_rev, index, message);
+        conv.metadata.revision = new_rev;
 
         drop(conv);
         DATABASE.notify_users(update).await;
@@ -87,13 +138,14 @@ impl Session {
     pub(super) async fn handle_edit_message(
         &mut self,
         num: usize,
-        conv_id: ConversationId,
+        conv_id: ConvId,
         rev: Revision,
         index: IndexInEntity,
         new_content: String,
     ) -> Result<Reply, ErrMsg> {
-        let (arc_user, _user_id) = self.get_user().await?;
-        arc_user.check_access_to(EntityId::Conversation(conv_id), true).await?;
+        let (arc_user, user_id) = self.get_user().await?;
+        let entity_id = EntityId::Conversation(conv_id);
+        arc_user.check_access_to(entity_id, true).await?;
 
         let arc_conv = DATABASE.conversations.find(conv_id).await.ok_or("No such conversation")?;
         let mut conv = arc_conv.write().await;
@@ -102,11 +154,27 @@ impl Session {
             return Err("Out of date or bad index");
         }
 
-        let rev = conv.metadata.revision;
+        let new_rev = conv.metadata.revision + 1;
         let message = &mut conv.messages[index as usize];
-        message.content = new_content;
-        message.edited = Some(now_stamp());
-        let update = Update::message(conv_id, rev, index, message);
+
+        if message.author != user_id {
+            return Err("Not the author");
+        }
+
+        let mut extended;
+        if message.extended {
+            extended = serde_json::from_str(&message.content).unwrap();
+        } else {
+            extended = MessageExtension::default();
+            message.extended = true;
+        }
+
+        extended.content = new_content;
+        extended.edited = Some(now_stamp());
+
+        message.content = serde_json::to_string(&extended).unwrap();
+        let update = Update::new(UpdateType::SetMessage, entity_id, new_rev, index, message);
+        conv.metadata.revision = new_rev;
 
         drop(conv);
         DATABASE.notify_users(update).await;

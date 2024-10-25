@@ -15,11 +15,11 @@ pub type Token = String;
 pub type Email = String;
 pub type Hash = String;
 
-pub type UserId = usize;
-pub type ConversationId = usize;
-pub type BucketId = usize;
-pub type DocumentId = usize;
-pub type SheetId = usize;
+pub type UserId = u32;
+pub type ConvId = u32;
+pub type BucketId = u32;
+pub type DocumentId = u32;
+pub type SheetId = u32;
 
 pub type Stamp = u64;
 
@@ -30,10 +30,20 @@ pub struct Conversation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
+    /// UserId::MAX if server-sent
     pub author: UserId,
     pub content: String,
     pub created: Stamp,
+    #[serde(default)]
+    pub extended: bool,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct MessageExtension {
+    pub content: String,
+    pub reactions: LiteMap<char, Vec<UserId>>,
     pub edited: Option<Stamp>,
+    pub replying_to: Option<IndexInEntity>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

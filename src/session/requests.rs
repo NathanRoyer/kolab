@@ -5,7 +5,7 @@ use crate::database::{
     entities::{Revision, EntityTag, IndexInEntity},
     objects::{
         Token, Cell, UserData, Email, Username, Element,
-        UserId, ConversationId, SheetId, DocumentId, BucketId,
+        UserId, ConvId, SheetId, DocumentId, BucketId,
     },
 };
 
@@ -50,9 +50,10 @@ pub enum RequestData {
     Drop(EntityId),
 
     // conversations
-    LoadMessagesBefore(ConversationId, MessageCursor),
-    PostMessage(ConversationId, Revision, String),
-    EditMessage(ConversationId, Revision, IndexInEntity, String),
+    LoadMessagesBefore(ConvId, MessageCursor),
+    PostMessage(ConvId, Revision, String),
+    ToggleReaction(ConvId, Revision, IndexInEntity, char),
+    EditMessage(ConvId, Revision, IndexInEntity, String),
 
     // spreadsheets
     LoadSpreadsheet(SheetId),

@@ -3,7 +3,8 @@ use litemap::LiteMap;
 
 use crate::serde_utils::SerdeRwLock as RwLock;
 
-use objects::{Conversation, Bucket, Sheet, Document, UserId, User, Username, Hash};
+use objects::{Conversation, Bucket, Sheet, Document, User, Username, Hash};
+use objects::{UserId, ConvId, DocumentId, BucketId, SheetId};
 use entities::{Entities, EntityData};
 use update::Update;
 
@@ -17,11 +18,11 @@ pub mod entities;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum EntityId {
-    Conversation(usize),
-    Document(usize),
-    Bucket(usize),
-    Spreadsheet(usize),
-    User(usize),
+    Conversation(ConvId),
+    Document(DocumentId),
+    Bucket(BucketId),
+    Spreadsheet(SheetId),
+    User(UserId),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

@@ -63,7 +63,10 @@ textarea {
 
 .jc-center { justify-content: center; }
 .jc-stretch { justify-content: stretch; }
+.jc-start, .msg-left { justify-content: flex-start; }
+.jc-end, .msg-right { justify-content: flex-end; }
 .ai-center { align-items: center; }
+.ai-stretch { align-items: stretch; }
 .as-start, .msg-left { align-self: flex-start; }
 .as-end, .msg-right { align-self: flex-end; }
 .as-center { align-self: center; }
@@ -109,6 +112,7 @@ textarea {
 .radius05 { border-radius: 0.5em; }
 .radius1 { border-radius: 1em; }
 
+.fs05 { font-size: 0.5em; }
 .fs08 { font-size: 0.8em; }
 .fs12 { font-size: 1.2em; }
 .fs15 { font-size: 1.5em; }
@@ -144,6 +148,7 @@ textarea {
 .bg-hide { background-color: #101010b0; }
 
 .w1 { width: 1em; }
+.w15 { width: 1.5em; }
 .w2 { width: 2em; }
 .w3 { width: 3em; }
 .w4 { width: 4em; }
@@ -225,13 +230,17 @@ textarea {
 .gradient-disk, .square { aspect-ratio: 1; }
 
 .msg-left, .msg-right {
-    margin: 2px;
-    --margin: max(4em, 20%);
-    max-width: 400px;
+    padding: 2px;
+    --msg-pad: max(4em, 20%);
 }
 
-.msg-left { border-radius: 0 1em 1em 1em; margin-right: var(--margin); }
-.msg-right { border-radius: 1em 0 1em 1em; margin-left: var(--margin); }
+.msg-left > span { border-radius: 0 1em 1em 1em; }
+.msg-right > span { border-radius: 1em 0 1em 1em; }
+.msg-left { padding-right: var(--msg-pad); }
+.msg-right { padding-left: var(--msg-pad); }
+
+.msg-right:not(:hover) > button,
+.msg-left:not(:hover) > button { color: #0000; }
 
 .msg-author, .bold { font-weight: bold; }
 

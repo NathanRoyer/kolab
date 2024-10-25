@@ -185,6 +185,7 @@ impl Session {
             // conversations
             LoadMessagesBefore(a, b) => self.handle_load_messages_before(n, a, b).await,
             PostMessage(a, b, c) => self.handle_post_message(n, a, b, c).await,
+            ToggleReaction(a, b, c, d) => self.handle_toggle_reaction(n, a, b, c, d).await,
             EditMessage(a, b, c, d) => self.handle_edit_message(n, a, b, c, d).await,
 
             // spreadsheets

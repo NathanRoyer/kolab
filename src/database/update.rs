@@ -1,8 +1,8 @@
 use serde::Serialize;
 
-use super::EntityId;
+use super::{EntityId, UserId};
 use super::entities::{Revision, IndexInEntity};
-use super::objects::{UserData, Message, Cell};
+use super::objects::{UserData, Cell, SheetId};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -13,6 +13,7 @@ pub enum UpdateType {
     ByeGuest,
     NewFriend,
     NewMessage,
+    SetMessage,
     SetCell,
     SetElement,
     NewElement,
@@ -49,20 +50,16 @@ impl Update {
         }
     }
 
-    pub fn user(user_id: usize, rev: Revision, data: &UserData) -> Self {
+    pub fn user(user_id: UserId, rev: Revision, data: &UserData) -> Self {
         Self::new(UpdateType::SetUser, EntityId::User(user_id), rev, 0, data)
     }
 
-    pub fn friend(sender_id: usize, receiver_id: usize) -> Self {
+    pub fn friend(sender_id: UserId, receiver_id: UserId) -> Self {
         let rcv = receiver_id as u64;
         Self::new(UpdateType::NewFriend, EntityId::User(sender_id), 0, rcv, &())
     }
 
-    pub fn message(conv_id: usize, rev: Revision, index: IndexInEntity, data: &Message) -> Self {
-        Self::new(UpdateType::NewMessage, EntityId::Conversation(conv_id), rev, index, data)
-    }
-
-    pub fn cell(sheet_id: usize, rev: Revision, index: IndexInEntity, data: &Cell) -> Self {
+    pub fn cell(sheet_id: SheetId, rev: Revision, index: IndexInEntity, data: &Cell) -> Self {
         Self::new(UpdateType::SetCell, EntityId::Spreadsheet(sheet_id), rev, index, data)
     }
 }

@@ -71,6 +71,7 @@ async function handle_update(update) {
 
     /*__*/ if (update.type === 'new-message') {
         let message = update.data;
+        message.index = update.index;
 
         if (!side && notif_enabled && message.author != USER_ID) {
             let text = await get_username(message.author) + ': ' + message.content;
@@ -83,6 +84,13 @@ async function handle_update(update) {
             await add_message(side.msg_div, message);
             await update_last_seen(side_i);
         }
+
+    } else if (update.type === 'set-message' && side) {
+        let message = update.data;
+        message.index = update.index;
+        side.revision = update.new_revision;
+        set_message(side_i, message);
+        await update_last_seen(side_i);
     } else if (update.type === 'new-guest' || update.type === 'bye-guest') {
         await load_user_data();
         await refresh_left_panel();

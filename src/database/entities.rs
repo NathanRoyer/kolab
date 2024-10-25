@@ -60,18 +60,18 @@ impl<T: Debug + Default> Entities<T> {
         }
     }
 
-    pub async fn find(&self, raw_id: usize) -> Option<Arc<RwLock<Entity<T>>>> {
+    pub async fn find(&self, raw_id: u32) -> Option<Arc<RwLock<Entity<T>>>> {
         let reader = self.inner.read().await;
-        reader.get(raw_id).cloned()
+        reader.get(raw_id as usize).cloned()
     }
 
-    pub async fn metadata(&self, raw_id: usize) -> Option<EntityData> {
+    pub async fn metadata(&self, raw_id: u32) -> Option<EntityData> {
         let arc_user = self.find(raw_id).await?;
         let user = arc_user.read().await;
         Some(user.metadata.clone())
     }
 
-    pub async fn new_entity(&self, metadata: EntityData) -> usize {
+    pub async fn new_entity(&self, metadata: EntityData) -> u32 {
         let entity = Entity {
             inner: T::default(),
             metadata,
@@ -79,13 +79,13 @@ impl<T: Debug + Default> Entities<T> {
 
         let arc_entity = Arc::new(RwLock::new(entity));
         let mut writer = self.inner.write().await;
-        let raw_id = writer.len();
+        let raw_id = writer.len() as u32;
         writer.push(arc_entity);
 
         raw_id
     }
 
-    pub(super) async fn try_push_guest(&self, raw_id: usize, guest: UserId) {
+    pub(super) async fn try_push_guest(&self, raw_id: u32, guest: UserId) {
         let Some(arc_entity) = self.find(raw_id).await else {
             println!("couldn't push guest!!");
             return;
@@ -95,7 +95,7 @@ impl<T: Debug + Default> Entities<T> {
         entity.metadata.guests.push(guest);
     }
 
-    pub(super) async fn try_drop_access(&self, raw_id: usize, user_id: UserId) {
+    pub(super) async fn try_drop_access(&self, raw_id: u32, user_id: UserId) {
         let Some(arc_entity) = self.find(raw_id).await else {
             println!("couldn't remove user access!!");
             return;
