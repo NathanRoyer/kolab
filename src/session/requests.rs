@@ -41,6 +41,7 @@ pub enum RequestData {
 
     // generic entity actions
     LoadHistory(EntityId),
+    SetLastSeen(EntityId, Revision),
     SetEntityTags(EntityId, Vec<EntityTag>),
     RenameEntity(EntityId, String),
     CreateInvite(EntityId, ReadOnly, Vec<UserId>),

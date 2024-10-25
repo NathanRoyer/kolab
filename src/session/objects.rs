@@ -29,7 +29,8 @@ impl Session {
         cursor: MessageCursor,
     ) -> Result<Reply, ErrMsg> {
         let (arc_user, _user_id) = self.get_user().await?;
-        arc_user.check_access_to(EntityId::Conversation(conv_id), false).await?;
+        let entity_id = EntityId::Conversation(conv_id);
+        arc_user.check_access_to(entity_id, false).await?;
 
         let arc_conv = DATABASE.conversations.find(conv_id).await.ok_or("No such conversation")?;
         let conv = arc_conv.read().await;
@@ -45,7 +46,7 @@ impl Session {
             return Err("Invalid cursor");
         };
 
-        let data = ReplyData::Messages(conv.revision, start as u64 ,slice.to_vec());
+        let data = ReplyData::Messages(conv.metadata.revision, start as u64 ,slice.to_vec());
         Ok(Reply::new(num, data))
     }
 
@@ -69,12 +70,13 @@ impl Session {
         let arc_conv = DATABASE.conversations.find(conv_id).await.ok_or("No such conversation")?;
         let mut conv = arc_conv.write().await;
 
-        if conv.revision != rev {
+        if conv.metadata.revision != rev {
             return Err("Out of date");
         }
 
+        conv.metadata.revision += 1;
         let index = conv.messages.len() as u64;
-        let update = Update::message(conv_id, conv.revision, index, &message);
+        let update = Update::message(conv_id, conv.metadata.revision, index, &message);
         conv.messages.push(message);
 
         drop(conv);
@@ -96,11 +98,11 @@ impl Session {
         let arc_conv = DATABASE.conversations.find(conv_id).await.ok_or("No such conversation")?;
         let mut conv = arc_conv.write().await;
         let bad_index = index >= (conv.messages.len() as u64);
-        if conv.revision != rev || bad_index {
+        if conv.metadata.revision != rev || bad_index {
             return Err("Out of date or bad index");
         }
 
-        let rev = conv.revision;
+        let rev = conv.metadata.revision;
         let message = &mut conv.messages[index as usize];
         message.content = new_content;
         message.edited = Some(now_stamp());
@@ -123,7 +125,7 @@ impl Session {
         let sheet = arc_sheet.read().await;
         let cells = sheet.cells.as_slice().to_vec();
 
-        Ok(Reply::new(num, ReplyData::Spreadsheet(sheet.revision, cells)))
+        Ok(Reply::new(num, ReplyData::Spreadsheet(sheet.metadata.revision, cells)))
     }
 
     pub(super) async fn handle_set_cell(
@@ -140,11 +142,11 @@ impl Session {
         let arc_sheet = DATABASE.sheets.find(sheet_id).await.ok_or("No such spreadsheet")?;
         let mut sheet = arc_sheet.write().await;
 
-        if sheet.revision != rev {
+        if sheet.metadata.revision != rev {
             return Err("Out of date");
         }
 
-        let update = Update::cell(sheet_id, sheet.revision, index, &cell);
+        let update = Update::cell(sheet_id, sheet.metadata.revision, index, &cell);
         sheet.cells[&index] = cell;
 
         drop(sheet);
@@ -163,7 +165,7 @@ impl Session {
         let arc_doc = DATABASE.documents.find(doc).await.ok_or("No such document")?;
         let doc = arc_doc.read().await;
         let elements = doc.elements.to_vec();
-        let rev = doc.revision;
+        let rev = doc.metadata.revision;
 
         Ok(Reply::new(num, ReplyData::Document(rev, elements)))
     }
@@ -183,15 +185,15 @@ impl Session {
 
         let arc_doc = DATABASE.documents.find(doc_id).await.ok_or("No such document")?;
         let mut doc = arc_doc.write().await;
-        let bad_rev = doc.revision != rev;
+        let bad_rev = doc.metadata.revision != rev;
         let bad_index = index > (doc.elements.len() as u64);
 
         if bad_rev || bad_index {
             return Err("Out of date or bad index");
         }
 
-        doc.revision += 1;
-        let update = Update::new(upd_type, entity_id, doc.revision, index, &element);
+        doc.metadata.revision += 1;
+        let update = Update::new(upd_type, entity_id, doc.metadata.revision, index, &element);
         doc.elements.insert(index as usize, element);
 
         drop(doc);
@@ -213,15 +215,15 @@ impl Session {
 
         let arc_doc = DATABASE.documents.find(doc_id).await.ok_or("No such document")?;
         let mut doc = arc_doc.write().await;
-        let bad_rev = doc.revision != rev;
+        let bad_rev = doc.metadata.revision != rev;
         let bad_index = index >= (doc.elements.len() as u64);
 
         if bad_rev || bad_index {
             return Err("Out of date or bad index");
         }
 
-        doc.revision += 1;
-        let update = Update::new(upd_type, entity_id, doc.revision, index, &"");
+        doc.metadata.revision += 1;
+        let update = Update::new(upd_type, entity_id, doc.metadata.revision, index, &"");
         doc.elements.remove(index as usize);
 
         drop(doc);
@@ -244,15 +246,15 @@ impl Session {
 
         let arc_doc = DATABASE.documents.find(doc_id).await.ok_or("No such document")?;
         let mut doc = arc_doc.write().await;
-        let bad_rev = doc.revision != rev;
+        let bad_rev = doc.metadata.revision != rev;
         let bad_index = index >= (doc.elements.len() as u64);
 
         if bad_rev || bad_index {
             return Err("Out of date or bad index");
         }
 
-        doc.revision += 1;
-        let update = Update::new(upd_type, entity_id, doc.revision, index, &element);
+        doc.metadata.revision += 1;
+        let update = Update::new(upd_type, entity_id, doc.metadata.revision, index, &element);
         doc.elements[index as usize] = element;
 
         drop(doc);
@@ -271,7 +273,7 @@ impl Session {
         let arc_bucket = DATABASE.buckets.find(bucket_id).await.ok_or("No such bucket")?;
         let bucket = arc_bucket.read().await;
         let files = bucket.files.to_vec();
-        let rev = bucket.revision;
+        let rev = bucket.metadata.revision;
 
         Ok(Reply::new(num, ReplyData::Bucket(rev, files)))
     }
@@ -290,15 +292,15 @@ impl Session {
 
         let arc_bucket = DATABASE.buckets.find(bucket_id).await.ok_or("No such bucket")?;
         let mut bucket = arc_bucket.write().await;
-        let bad_rev = bucket.revision != rev;
+        let bad_rev = bucket.metadata.revision != rev;
         let bad_index = index >= (bucket.files.len() as u64);
 
         if bad_rev || bad_index {
             return Err("Out of date or bad index");
         }
 
-        bucket.revision += 1;
-        let update = Update::new(upd_type, entity_id, bucket.revision, index, &"");
+        bucket.metadata.revision += 1;
+        let update = Update::new(upd_type, entity_id, bucket.metadata.revision, index, &"");
         let file = bucket.files.remove(index as usize);
 
         drop(bucket);
@@ -325,7 +327,7 @@ impl Session {
         let len = bucket.files.len() as u64;
         let index = index.unwrap_or(len);
         let diff = len.checked_sub(index).ok_or("Bad index")?;
-        let bad_rev = bucket.revision != rev;
+        let bad_rev = bucket.metadata.revision != rev;
         let new_file = diff == 0;
 
         if bad_rev {
@@ -337,8 +339,8 @@ impl Session {
             false => UpdateType::SetFile,
         };
 
-        bucket.revision += 1;
-        let update = Update::new(upd_type, entity_id, bucket.revision, index, &file);
+        bucket.metadata.revision += 1;
+        let update = Update::new(upd_type, entity_id, bucket.metadata.revision, index, &file);
         DATABASE.inc_file_rc(&file.sha256).await;
 
         let maybe_old_file = if new_file {

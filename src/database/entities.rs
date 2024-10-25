@@ -21,7 +21,6 @@ pub struct Entities<T: Debug> {
 pub struct Entity<T: Debug> {
     pub inner: T,
     pub metadata: EntityData,
-    pub revision: Revision,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -29,6 +28,7 @@ pub struct EntityData {
     pub image: AssociatedImage,
     pub author: UserId,
     pub guests: Vec<UserId>,
+    pub revision: Revision,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +36,7 @@ pub struct EntityAccess {
     pub read_only: bool,
     pub local_name: String,
     pub tags: Vec<EntityTag>,
+    pub last_seen_rev: Revision,
 }
 
 impl<T: Debug> Deref for Entity<T> {
@@ -74,7 +75,6 @@ impl<T: Debug + Default> Entities<T> {
         let entity = Entity {
             inner: T::default(),
             metadata,
-            revision: 0,
         };
 
         let arc_entity = Arc::new(RwLock::new(entity));

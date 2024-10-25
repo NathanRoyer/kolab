@@ -174,6 +174,7 @@ impl Session {
 
             // generic entity actions
             LoadHistory(a) => self.handle_load_history(n, a).await,
+            SetLastSeen(a, b) => self.handle_set_last_seen(n, a, b).await,
             SetEntityTags(a, b) => self.handle_set_entity_tags(n, a, b).await,
             RenameEntity(a, b) => self.handle_rename_entity(n, a, b).await,
             CreateInvite(a, b, c) => self.handle_create_invite(n, a, b, c).await,

@@ -68,6 +68,7 @@ async function handle_update(update) {
     // can be undefined
     let side_i = find_side(update.id);
     let side = SIDES[side_i];
+
     /*__*/ if (update.type === 'new-message') {
         let message = update.data;
 
@@ -77,7 +78,11 @@ async function handle_update(update) {
             new Notification(title, { body: text });
         }
 
-        if (side) await add_message(side.msg_div, message);
+        if (side) {
+            side.revision = update.new_revision;
+            await add_message(side.msg_div, message);
+            await update_last_seen(side_i);
+        }
     } else if (update.type === 'new-guest' || update.type === 'bye-guest') {
         await load_user_data();
         await refresh_left_panel();
@@ -93,11 +98,13 @@ async function handle_update(update) {
         side.elem_div.children[update.index].remove();
         side.elements.splice(update.index, 1);
         side.revision = update.new_revision;
+        await update_last_seen(side_i);
     } else if (update.type === 'set-element' && side) {
         let node = element_node(update.data);
         side.elem_div.children[update.index].replaceWith(node);
         side.elements[update.index] = update.data;
         side.revision = update.new_revision;
+        await update_last_seen(side_i);
     } else if (update.type === 'new-element' && side) {
         let new_node = element_node(update.data);
         side.revision = update.new_revision;
@@ -110,8 +117,14 @@ async function handle_update(update) {
             side.elem_div.insertBefore(new_node, ref_node);
             side.elements.splice(update.index, 0, update.data);
         }
+        await update_last_seen(side_i);
     } else if (update.type.endsWith('-file') && side) {
         await open_entity(update.id);
+    }
+
+    if (side === undefined) {
+        await load_user_data();
+        await refresh_left_panel();
     }
 }
 

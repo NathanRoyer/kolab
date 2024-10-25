@@ -56,6 +56,7 @@ impl Session {
             image: AssociatedImage::random_gradient(),
             author: 0, // set after insertion
             guests: Vec::new(),
+            revision: 0,
         };
 
         let user_id = DATABASE.users.new_entity(metadata).await;
@@ -141,7 +142,7 @@ impl Session {
         let arc_user = DATABASE.users.find(user_id).await.ok_or("No such user")?;
 
         let user = arc_user.read().await;
-        let revision = user.revision;
+        let revision = user.metadata.revision;
         let image = user.metadata.image.clone();
         let public = user.public.clone();
         let secret = user.secret.clone();
@@ -178,12 +179,12 @@ impl Session {
 
         let mut user = arc_user.write().await;
 
-        if user.revision != rev {
+        if user.metadata.revision != rev {
             return Err("Out of date");
         }
 
-        user.revision += 1;
-        let update = Update::user(user_id, user.revision, &data);
+        user.metadata.revision += 1;
+        let update = Update::user(user_id, user.metadata.revision, &data);
         user.public = data;
 
         drop(user);
@@ -211,11 +212,12 @@ impl Session {
             read_only: data.read_only,
             local_name: data.orig_name,
             tags: Vec::new(),
+            last_seen_rev: 0,
         };
 
         if true {
             let mut user = arc_user.write().await;
-            if user.revision != revision {
+            if user.metadata.revision != revision {
                 return Err("bad revision");
             }
 
@@ -224,7 +226,7 @@ impl Session {
                 user.secret.entities.insert(data.target, access);
             }
 
-            user.revision += 1;
+            user.metadata.revision += 1;
             user.secret.invites.remove(invite);
         };
 
@@ -237,10 +239,11 @@ impl Session {
                 read_only: true,
                 local_name: "Friend Request".into(),
                 tags: Vec::new(),
+                last_seen_rev: 0,
             };
 
             let mut friend = arc_friend.write().await;
-            friend.revision += 1;
+            friend.metadata.revision += 1;
             friend.secret.entities.insert(our_id, access);
             let sessions = friend.sessions.clone();
             drop(friend);
@@ -287,6 +290,7 @@ impl Session {
             image: AssociatedImage::random_gradient(),
             author: user_id,
             guests: Vec::new(),
+            revision: 0,
         };
 
         let db = &DATABASE;
@@ -302,6 +306,7 @@ impl Session {
             read_only: false,
             local_name,
             tags: Vec::new(),
+            last_seen_rev: Revision::MAX, // so that it updates
         };
 
         let mut user = arc_user.write().await;

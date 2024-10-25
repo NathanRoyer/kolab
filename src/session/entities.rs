@@ -3,7 +3,7 @@ use crate::{
         EntityId, InviteData,
         update::{Update, UpdateType},
         objects::{Username, UserId},
-        entities::EntityTag,
+        entities::{EntityTag, Revision},
     }
 };
 
@@ -21,6 +21,19 @@ impl Session {
         a: EntityId,
     ) -> Result<Reply, ErrMsg> {
         Err("unimplemented")
+    }
+
+    pub(super) async fn handle_set_last_seen(
+        &mut self,
+        num: usize,
+        entity_id: EntityId,
+        revision: Revision,
+    ) -> Result<Reply, ErrMsg> {
+        let (arc_user, _user_id) = self.get_user().await?;
+        let mut user = arc_user.write().await;
+        let access = user.secret.entities.get_mut(&entity_id).ok_or("No such entity")?;
+        access.last_seen_rev = revision;
+        Ok(Reply::new(num, ReplyData::GenericSuccess))
     }
 
     pub(super) async fn handle_set_entity_tags(

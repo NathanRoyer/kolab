@@ -14,18 +14,25 @@ async function refresh_left_panel() {
 
     USERNAMES[USER_ID] = USER_DATA.public.name;
 
+    let prev_scroll = LEFT_PANEL_ITEMS.scrollTop;
     LEFT_PANEL_ITEMS.innerHTML = '';
+    let has_objects = false;
     let entity_ids = Object.keys(USER_DATA.secret.entities);
     for (let i = entity_ids.length - 1; i >= 0; i--) {
         let id = entity_ids[i];
-        if (!id.startsWith('user-')) add_entity(id);
+        if (!id.startsWith('user-')) {
+            has_objects = true;
+            add_entity(id);
+        }
     }
 
-    if (!entity_ids.length) {
+    if (!has_objects) {
         let placeholder_c = ['pad05', 'disabled', 'ta-center'];
         let placeholder = create(LEFT_PANEL_ITEMS, 'i', placeholder_c);
         placeholder.innerText = 'Create an object to get started!';
     }
+
+    LEFT_PANEL_ITEMS.scrollTop = prev_scroll;
 }
 
 function find_side(entity_id) {
@@ -151,8 +158,15 @@ async function open_entity(entity_id) {
     };
 
     await init[ent_type](side_i);
+    await update_last_seen(side_i);
     await refresh_left_panel();
     setTimeout(() => element.classList.add('appear'), 100);
+}
+
+async function update_last_seen(side_i) {
+    let side = SIDES[side_i];
+    USER_DATA.secret.entities[side.entity_id].last_seen_rev = side.revision;
+    await request("set-last-seen", [side.entity_id, side.revision]);
 }
 
 function show_settings_icon() {
@@ -238,7 +252,11 @@ async function show_entity_invite_popup() {
 }
 
 async function add_entity(entity_id) {
-    let text = USER_DATA.secret.entities[entity_id].local_name;
+    let access = USER_DATA.secret.entities[entity_id];
+    let current_rev = USER_DATA.entity_map[entity_id].revision;
+    
+    let out_of_date = access.last_seen_rev !== current_rev;
+
     let [c1, c2] = await get_image(entity_id);
     let row_classes = ['flex-h', 'jc-center', 'fs12', 'h3', 'noverflow'];
     let side = SIDES[id_to_side(entity_id)];
@@ -255,11 +273,11 @@ async function add_entity(entity_id) {
     avatar.style.setProperty('--gc2', c2);
 
     let name_c = ['grow', 'collapse-bye', 'ellipsis', 'left-panel-name'];
-    create(cont, 'h4', name_c).innerText = text;
+    create(cont, 'h4', name_c).innerText = access.local_name;
 
     let icon_c = ['pad04', 'fs15', 'as-center', 'btn', 'collapse-bye', 'contained'];
     let icon = create(row, 'span', icon_c);
-    icon.innerText = type_icon(entity_id);
+    icon.innerText = (out_of_date ? '• ' : '') + type_icon(entity_id);
     icon.addEventListener('mouseenter', show_settings_icon);
     icon.addEventListener('mouseleave', hide_settings_icon);
 
