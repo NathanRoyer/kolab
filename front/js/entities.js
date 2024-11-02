@@ -279,7 +279,7 @@ async function add_entity(entity_id) {
 
     let icon_c = ['pad04', 'fs15', 'as-center', 'btn', 'collapse-bye', 'contained'];
     let icon = create(row, 'span', icon_c);
-    icon.innerText = (out_of_date ? '• ' : '') + type_icon(entity_id);
+    icon.innerText = (out_of_date ? '◦ ' : '') + type_icon(entity_id);
     icon.addEventListener('mouseenter', show_settings_icon);
     icon.addEventListener('mouseleave', hide_settings_icon);
 

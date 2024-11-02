@@ -127,6 +127,7 @@ async function handle_update(update) {
         }
         await update_last_seen(side_i);
     } else if (update.type.endsWith('-file') && side) {
+        side.revision = update.new_revision;
         await open_entity(update.id);
     }
 
