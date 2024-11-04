@@ -50,7 +50,7 @@ async function file_new_tab() {
     let side = SIDES[this.parentElement.side_i];
     let data = side.files[this.index];
     let anchor = document.createElement('a');
-    anchor.href = '/files/' + data.sha256 + '.dat';
+    anchor.href = '/files/' + data.sha256 + '/' + data.name;
     anchor.target = '_blank';
     anchor.click();
 }
@@ -66,6 +66,7 @@ async function upload() {
     let file_input = document.createElement('input');
     file_input.type = 'file';
     file_input.side_i = this.side_i;
+    file_input.multiple = 'multiple';
     file_input.addEventListener('change', file_pick);
     file_input.click();
 }

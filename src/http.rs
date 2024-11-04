@@ -86,12 +86,12 @@ async fn file_reply(stream: TcpStream, http_version: &str, http_path: &str) {
         return not_found(stream, http_version).await;
     };
 
-    if file_name.contains('/') {
+    let Some((hash, dl_name)) = file_name.split_once('/') else {
         return not_found(stream, http_version).await;
-    }
+    };
 
-    let file_path = format!("files/{file_name}");
-    let Ok(bytes) = read(file_path).await else {
+    let file_path = format!("files/{hash}.dat");
+    let Ok(bytes) = read(&file_path).await else {
         return not_found(stream, http_version).await;
     };
 
@@ -100,6 +100,7 @@ async fn file_reply(stream: TcpStream, http_version: &str, http_path: &str) {
         None => "application/octet-stream",
     };
 
+    println!("Serving {file_path} as {dl_name:?}");
     reply(stream, http_version, "200 OK", content_type, &bytes).await;
 }
 
