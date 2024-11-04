@@ -124,6 +124,8 @@ pub struct SecretUserData {
     pub invites: Vec<InviteData>,
     pub entities: LiteMap<EntityId, EntityAccess>,
     pub password_hash: String,
+    #[serde(default)]
+    pub password_salt: String,
     pub server_admin: bool,
     pub max_file_size: usize,
 }

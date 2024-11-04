@@ -35,24 +35,14 @@ async fn trigger_backup() {
     let _ = reader.as_ref().unwrap().send(()).await;
 }
 
-fn to_hex(array: [u8; 32]) -> String {
-    let [
-        a0, a1, a2, a3, a4, a5, a6, a7,
-        b0, b1, b2, b3, b4, b5, b6, b7,
-        c0, c1, c2, c3, c4, c5, c6, c7,
-        d0, d1, d2, d3, d4, d5, d6, d7,
-    ] = array;
+fn crypto_hash(salt: Option<[u8; 32]>, mut string: String) -> String {
+    let salt = salt.as_ref().map(|s| s.as_slice()).unwrap_or(b"");
+    let mut hasher = Sha256::new();
 
-    let a = u64::from_le_bytes([a0, a1, a2, a3, a4, a5, a6, a7,]);
-    let b = u64::from_le_bytes([b0, b1, b2, b3, b4, b5, b6, b7,]);
-    let c = u64::from_le_bytes([c0, c1, c2, c3, c4, c5, c6, c7,]);
-    let d = u64::from_le_bytes([d0, d1, d2, d3, d4, d5, d6, d7,]);
+    hasher.update(salt);
+    hasher.update(&string);
 
-    format!("{:016x}{:016x}{:016x}{:016x}", a, b, c, d)
-}
-
-fn crypto_hash(mut string: String) -> String {
-    let hash = to_hex(Sha256::digest(&string).into());
+    let hash = to_hex(hasher.finalize().into());
 
     // erase from ram
     // the whitespace will move to the left, erasing every char
@@ -142,4 +132,49 @@ impl<T, E: core::fmt::Debug> StringifyError<T> for Result<T, E> {
     fn fmt_err(self, context: &str) -> Result<T, String> {
         self.map_err(|e| format!("[{context}] {e:?}"))
     }
+}
+
+fn to_hex(array: [u8; 32]) -> String {
+    let [
+        a0, a1, a2, a3, a4, a5, a6, a7,
+        b0, b1, b2, b3, b4, b5, b6, b7,
+        c0, c1, c2, c3, c4, c5, c6, c7,
+        d0, d1, d2, d3, d4, d5, d6, d7,
+    ] = array;
+
+    let a = u64::from_le_bytes([a0, a1, a2, a3, a4, a5, a6, a7]);
+    let b = u64::from_le_bytes([b0, b1, b2, b3, b4, b5, b6, b7]);
+    let c = u64::from_le_bytes([c0, c1, c2, c3, c4, c5, c6, c7]);
+    let d = u64::from_le_bytes([d0, d1, d2, d3, d4, d5, d6, d7]);
+
+    format!("{:016x}{:016x}{:016x}{:016x}", a, b, c, d)
+}
+
+fn from_hex(hex: &str) -> Result<[u8; 32], &'static str> {
+    if hex.len() != 64 {
+        return Err("from_hex: bad hexadecimal string length");
+    }
+
+    let a = u64::from_str_radix(&hex[ 0..16], 16);
+    let b = u64::from_str_radix(&hex[16..32], 16);
+    let c = u64::from_str_radix(&hex[32..48], 16);
+    let d = u64::from_str_radix(&hex[48..64], 16);
+
+    let [Ok(a), Ok(b), Ok(c), Ok(d)] = [a, b, c, d] else {
+        return Err("from_hex: bad hexadecimal string");
+    };
+
+    let [a0, a1, a2, a3, a4, a5, a6, a7] = a.to_le_bytes();
+    let [b0, b1, b2, b3, b4, b5, b6, b7] = b.to_le_bytes();
+    let [c0, c1, c2, c3, c4, c5, c6, c7] = c.to_le_bytes();
+    let [d0, d1, d2, d3, d4, d5, d6, d7] = d.to_le_bytes();
+
+    let bytes = [
+        a0, a1, a2, a3, a4, a5, a6, a7,
+        b0, b1, b2, b3, b4, b5, b6, b7,
+        c0, c1, c2, c3, c4, c5, c6, c7,
+        d0, d1, d2, d3, d4, d5, d6, d7,
+    ];
+
+    Ok(bytes)
 }

@@ -5,6 +5,7 @@ use async_lock::RwLock;
 use async_fs::read;
 
 use std::str::from_utf8;
+use std::env::var;
 
 use crate::{INDEX_HTML, MAIN_JS, STYLE_CSS, session};
 use crate::executor::Task;
@@ -14,7 +15,11 @@ async fn sleep_ms(millis: u64) {
 }
 
 pub async fn listen(tx_tasks: Sender<Task>) {
-    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    let addr = var("KOLAB_ADDR");
+    let addr = addr.as_deref().unwrap_or("0.0.0.0:8080");
+
+    println!("Listening on {}", addr);
+    let listener = TcpListener::bind(addr).await.unwrap();
 
     while let Ok((stream, _addr)) = listener.accept().await {
         let new_task = process_request(stream);

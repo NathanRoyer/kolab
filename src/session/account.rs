@@ -9,7 +9,7 @@ use crate::{
     }
 };
 
-use crate::{DATABASE, crypto_hash, to_hex, trigger_backup};
+use crate::{DATABASE, crypto_hash, from_hex, to_hex, trigger_backup};
 use super::requests::{ChallengeTarget, Code, Invite};
 use super::replies::{Reply, ReplyData};
 use super::{Session, ErrMsg};
@@ -43,7 +43,8 @@ impl Session {
         name: Username,
         password: String,
     ) -> Result<Reply, ErrMsg> {
-        let password_hash = crypto_hash(password);
+        let password_salt: [u8; 32] = rand::random();
+        let password_hash = crypto_hash(Some(password_salt), password);
 
         if true {
             let reader = DATABASE.usernames.read().await;
@@ -71,6 +72,7 @@ impl Session {
 
         user.secret.server_admin = user_id == 0;
         user.secret.password_hash = password_hash;
+        user.secret.password_salt = to_hex(password_salt);
         user.secret.max_file_size = 50 * 1024 * 1024; // 50 MiB
         user.metadata.author = user_id;
         user.public = UserData {
@@ -88,10 +90,11 @@ impl Session {
         user_id: UserId,
         password: String,
     ) -> Result<Reply, ErrMsg> {
-        let password_hash = crypto_hash(password);
-
         let arc_user = DATABASE.users.find(user_id).await.ok_or("No such user")?;
         let mut user = arc_user.write().await;
+
+        let password_salt = from_hex(&user.secret.password_salt).ok();
+        let password_hash = crypto_hash(password_salt, password);
 
         if user.secret.password_hash != password_hash {
             return Err("Wrong password");
